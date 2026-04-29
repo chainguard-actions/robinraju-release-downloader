@@ -1,6 +1,12 @@
 # robinraju/release-downloader
 
-Hardened GitHub Action by [Chainguard](https://www.chainguard.dev).
+Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/robinraju/release-downloader](https://github.com/robinraju/release-downloader).
+
+## Versions
+
+| Version | Tag | Upstream commit |
+|---------|-----|-----------------|
+| v1.12 | [`v1.12`](https://github.com/chainguard-actions/release-downloader/tree/v1.12) | — |
 
 ## Privacy
 
