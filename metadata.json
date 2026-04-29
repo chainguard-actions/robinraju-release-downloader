@@ -1,5 +1,6 @@
 {
   "owner": "robinraju",
   "name": "release-downloader",
-  "visibility": ""
+  "visibility": "internal",
+  "description": "Github action to download release assets from private or public repositories"
 }

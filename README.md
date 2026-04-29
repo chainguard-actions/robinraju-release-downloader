@@ -1,5 +1,7 @@
 # robinraju/release-downloader
 
+Github action to download release assets from private or public repositories
+
 Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/robinraju/release-downloader](https://github.com/robinraju/release-downloader).
 
 ## Versions
