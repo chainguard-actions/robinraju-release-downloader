@@ -1,4 +1,6 @@
 {
-  "upstream": "robinraju/release-downloader",
-  "version": "v1.12"
+  "owner": "robinraju",
+  "repo": "release-downloader",
+  "version": "",
+  "url": "https://github.com/robinraju/release-downloader"
 }

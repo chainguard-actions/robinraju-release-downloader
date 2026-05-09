@@ -2,5 +2,6 @@
   "owner": "robinraju",
   "name": "release-downloader",
   "visibility": "internal",
-  "description": "Github action to download release assets from private or public repositories"
+  "description": "Github action to download release assets from private or public repositories",
+  "block_publish": false
 }
