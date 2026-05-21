@@ -8,7 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
-| v1.12 | [`v1.12`](https://github.com/chainguard-actions/release-downloader/tree/v1.12) | — |
+| v1.12 | [`v1.12`](https://github.com/chainguard-actions/robinraju-release-downloader/tree/v1.12) | — |
 
 ## Privacy
 
