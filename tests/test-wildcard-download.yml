@@ -1,0 +1,56 @@
+name: Test wildcard download all assets
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: download
+        name: Download all release assets with wildcard
+        uses: .
+        with:
+          repository: robinraju/probable-potato
+          tag: '1.0.1'
+          fileName: '*'
+          out-file-path: wildcard-assets
+
+      - name: Assert tag_name output
+        env:
+          TAG_NAME: ${{ steps.download.outputs.tag_name }}
+        run: |
+          echo "tag_name: $TAG_NAME"
+          if [ "$TAG_NAME" != "1.0.1" ]; then
+            echo "FAIL: expected tag_name to be '1.0.1', got '$TAG_NAME'"
+            exit 1
+          fi
+          echo "PASS: tag_name is correct"
+
+      - name: Assert downloaded_files output is non-empty
+        env:
+          DOWNLOADED_FILES: ${{ steps.download.outputs.downloaded_files }}
+        run: |
+          echo "downloaded_files: $DOWNLOADED_FILES"
+          if [ -z "$DOWNLOADED_FILES" ]; then
+            echo "FAIL: expected downloaded_files to be non-empty"
+            exit 1
+          fi
+          echo "PASS: downloaded_files is non-empty"
+
+      - name: Assert output directory has files
+        run: |
+          DIR="$GITHUB_WORKSPACE/wildcard-assets"
+          echo "Checking directory: $DIR"
+          if [ ! -d "$DIR" ]; then
+            echo "FAIL: output directory does not exist"
+            exit 1
+          fi
+          COUNT=$(ls -1 "$DIR" | wc -l)
+          echo "Files in directory: $COUNT"
+          ls -la "$DIR"
+          if [ "$COUNT" -lt 1 ]; then
+            echo "FAIL: expected at least one file but got $COUNT"
+            exit 1
+          fi
+          echo "PASS: $COUNT file(s) downloaded"

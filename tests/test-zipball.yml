@@ -1,0 +1,41 @@
+name: Test zipball download
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          repository: robinraju/release-downloader
+          tag: 'v1.11'
+          zipBall: 'true'
+          out-file-path: 'release-zipball-test'
+          token: ${{ github.token }}
+
+      - name: Assert tag_name is set
+        env:
+          TAG: ${{ steps.action.outputs.tag_name }}
+        run: |
+          echo "tag_name: $TAG"
+          if [ -z "$TAG" ]; then
+            echo "FAIL: tag_name output is empty"
+            exit 1
+          fi
+          echo "PASS: tag_name=$TAG"
+
+      - name: Assert zipball was downloaded
+        run: |
+          ls release-zipball-test/ || true
+          COUNT=$(ls release-zipball-test/*.zip 2>/dev/null | wc -l)
+          echo "zipball count: $COUNT"
+          if [ "$COUNT" -lt 1 ]; then
+            echo "FAIL: no zipball found in release-zipball-test"
+            exit 1
+          fi
+          echo "PASS: zipball downloaded"

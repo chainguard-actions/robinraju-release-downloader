@@ -1,0 +1,111 @@
+name: pr_validation
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Reject committed dist changes
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # Block humans from committing built artifacts (additions/modifications).
+          dist_changes="$(git diff --name-only --diff-filter=AM \
+            "$PR_BASE_SHA"..HEAD -- dist)"
+
+          if [ -n "$dist_changes" ]; then
+            echo "dist/ is CI-managed and must not be added or modified in pull requests."
+            echo "Changed dist files:"
+            echo "$dist_changes"
+            exit 1
+          fi
+
+      - name: Setup node and cache dependencies
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: '.node-version'
+          cache: 'npm'
+
+      - name: Validate source
+        shell: bash
+        run: |
+          npm ci
+          npm run verify
+
+      - name: Download public release asset
+        uses: ./
+        id: download-public
+        with:
+          repository: 'robinraju/probable-potato'
+          tag: '1.0.1'
+          fileName: 'potato.jpeg'
+          tarBall: true
+          zipBall: true
+          out-file-path: './test-downloads'
+
+      - name: List downloaded files
+        shell: bash
+        run: ls -lrth test-downloads
+
+      - name: Download tarball and zipball only
+        uses: ./
+        with:
+          repository: 'robinraju/probable-potato'
+          tag: '1.0.2'
+          tarBall: true
+          zipBall: true
+          out-file-path: './public-download'
+
+      - name: List downloaded archive files
+        shell: bash
+        run: ls -lrth public-download
+
+      - name: Test download latest pre-release
+        uses: ./
+        with:
+          repository: 'robinraju/probable-potato'
+          latest: true
+          preRelease: true
+          fileName: 'prerelease.txt'
+          tarBall: true
+          zipBall: true
+          out-file-path: './prerelease-downloads'
+
+      - name: List prerelease downloads
+        shell: bash
+        run: ls -lrth prerelease-downloads
+
+      - name: Read public integration outputs
+        shell: bash
+        env:
+          PUBLIC_TAG_NAME: ${{ steps.download-public.outputs.tag_name }}
+          PUBLIC_DOWNLOADED_FILES: ${{ steps.download-public.outputs.downloaded_files }}
+        run: |
+          if [ -n "$PUBLIC_TAG_NAME" ]; then
+            echo "$PUBLIC_TAG_NAME"
+          else
+            echo "Unable to read output variable from step download-public"
+            exit 1
+          fi
+
+          echo "Downloaded public files:"
+          echo "$PUBLIC_DOWNLOADED_FILES"

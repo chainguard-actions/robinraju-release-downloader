@@ -1,0 +1,74 @@
+name: Test tarball download
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: download
+        name: Download tarball from release
+        uses: .
+        with:
+          repository: robinraju/probable-potato
+          tag: '1.0.2'
+          tarBall: 'true'
+          out-file-path: tarball-assets
+
+      - name: Assert tag_name output
+        env:
+          TAG_NAME: ${{ steps.download.outputs.tag_name }}
+        run: |
+          echo "tag_name: $TAG_NAME"
+          if [ "$TAG_NAME" != "1.0.2" ]; then
+            echo "FAIL: expected tag_name to be '1.0.2', got '$TAG_NAME'"
+            exit 1
+          fi
+          echo "PASS: tag_name is correct"
+
+      - name: Assert release_name output is non-empty
+        env:
+          RELEASE_NAME: ${{ steps.download.outputs.release_name }}
+        run: |
+          echo "release_name: $RELEASE_NAME"
+          if [ -z "$RELEASE_NAME" ]; then
+            echo "FAIL: expected release_name to be non-empty"
+            exit 1
+          fi
+          echo "PASS: release_name is non-empty: $RELEASE_NAME"
+
+      - name: Assert downloaded_files output is non-empty
+        env:
+          DOWNLOADED_FILES: ${{ steps.download.outputs.downloaded_files }}
+        run: |
+          echo "downloaded_files: $DOWNLOADED_FILES"
+          if [ -z "$DOWNLOADED_FILES" ]; then
+            echo "FAIL: expected downloaded_files to be non-empty"
+            exit 1
+          fi
+          echo "PASS: downloaded_files is non-empty"
+
+      - name: Assert tarball was downloaded
+        run: |
+          DIR="$GITHUB_WORKSPACE/tarball-assets"
+          echo "Checking directory: $DIR"
+          if [ ! -d "$DIR" ]; then
+            echo "FAIL: output directory does not exist"
+            exit 1
+          fi
+          COUNT=$(ls -1 "$DIR" | wc -l)
+          echo "Files in directory: $COUNT"
+          ls -la "$DIR"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "FAIL: no tarball downloaded"
+            exit 1
+          fi
+          # The tarball is named probable-potato-1.0.2.tar.gz
+          TARBALL=$(ls "$DIR"/*.tar.gz 2>/dev/null | head -1)
+          if [ -z "$TARBALL" ]; then
+            echo "FAIL: no .tar.gz file found in $DIR"
+            ls -la "$DIR"
+            exit 1
+          fi
+          echo "PASS: tarball downloaded: $TARBALL"

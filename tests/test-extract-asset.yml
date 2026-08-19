@@ -1,0 +1,58 @@
+name: Test download and extract asset
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: download
+        name: Download and extract tarball from release
+        uses: .
+        with:
+          repository: robinraju/probable-potato
+          tag: '1.0.1'
+          tarBall: 'true'
+          out-file-path: extracted-assets
+          extract: 'true'
+
+      - name: Assert tag_name output
+        env:
+          TAG_NAME: ${{ steps.download.outputs.tag_name }}
+        run: |
+          echo "tag_name: $TAG_NAME"
+          if [ "$TAG_NAME" != "1.0.1" ]; then
+            echo "FAIL: expected tag_name to be '1.0.1', got '$TAG_NAME'"
+            exit 1
+          fi
+          echo "PASS: tag_name is correct"
+
+      - name: Assert downloaded_files output is non-empty
+        env:
+          DOWNLOADED_FILES: ${{ steps.download.outputs.downloaded_files }}
+        run: |
+          echo "downloaded_files: $DOWNLOADED_FILES"
+          if [ -z "$DOWNLOADED_FILES" ]; then
+            echo "FAIL: expected downloaded_files to be non-empty"
+            exit 1
+          fi
+          echo "PASS: downloaded_files is non-empty"
+
+      - name: Assert output directory exists and has files
+        run: |
+          DIR="$GITHUB_WORKSPACE/extracted-assets"
+          echo "Checking directory: $DIR"
+          if [ ! -d "$DIR" ]; then
+            echo "FAIL: output directory does not exist"
+            exit 1
+          fi
+          echo "Contents of $DIR:"
+          ls -la "$DIR"
+          COUNT=$(ls -1 "$DIR" | wc -l)
+          echo "Files/dirs in directory: $COUNT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "FAIL: no files found after extraction"
+            exit 1
+          fi
+          echo "PASS: extraction produced $COUNT item(s)"

@@ -1,0 +1,56 @@
+name: Test download by specific tag
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          repository: robinraju/release-downloader
+          tag: 'v1.11'
+          tarBall: 'true'
+          out-file-path: 'release-tag-test'
+          token: ${{ github.token }}
+
+      - name: Assert tag_name matches requested tag
+        env:
+          TAG: ${{ steps.action.outputs.tag_name }}
+        run: |
+          echo "tag_name: $TAG"
+          if [ -z "$TAG" ]; then
+            echo "FAIL: tag_name output is empty"
+            exit 1
+          fi
+          if [ "$TAG" != "v1.11" ]; then
+            echo "FAIL: expected tag_name=v1.11, got $TAG"
+            exit 1
+          fi
+          echo "PASS: tag_name=$TAG"
+
+      - name: Assert release_name is set
+        env:
+          RELEASE: ${{ steps.action.outputs.release_name }}
+        run: |
+          echo "release_name: $RELEASE"
+          if [ -z "$RELEASE" ]; then
+            echo "FAIL: release_name output is empty"
+            exit 1
+          fi
+          echo "PASS: release_name=$RELEASE"
+
+      - name: Assert tarball was downloaded
+        run: |
+          ls release-tag-test/ || true
+          COUNT=$(ls release-tag-test/*.tar.gz 2>/dev/null | wc -l)
+          echo "tarball count: $COUNT"
+          if [ "$COUNT" -lt 1 ]; then
+            echo "FAIL: no tarball found in release-tag-test"
+            exit 1
+          fi
+          echo "PASS: tarball downloaded"
