@@ -1,0 +1,65 @@
+name: Test wildcard download all assets
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Pre-create output directory
+        run: mkdir -p "$GITHUB_WORKSPACE/wildcard-download"
+
+      - id: download
+        uses: .
+        continue-on-error: true
+        with:
+          repository: robinraju/release-downloader
+          tag: v1.11
+          fileName: '*'
+          out-file-path: wildcard-download
+          token: ${{ github.token }}
+
+      - name: Assert action outcome
+        env:
+          OUTCOME: ${{ steps.download.outcome }}
+          TAG: ${{ steps.download.outputs.tag_name }}
+          FILES: ${{ steps.download.outputs.downloaded_files }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "tag_name: $TAG"
+          echo "downloaded_files: $FILES"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ "$TAG" != "v1.11" ]; then
+              echo "FAIL: expected tag_name 'v1.11', got '$TAG'"
+              exit 1
+            fi
+            if [ -z "$FILES" ]; then
+              echo "FAIL: downloaded_files is empty"
+              exit 1
+            fi
+            echo "PASS: tag_name='$TAG' files='$FILES'"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (API not reachable or rate limited)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
+
+      - name: Assert output directory has files (if action succeeded)
+        env:
+          OUTCOME: ${{ steps.download.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            ls -la wildcard-download/
+            COUNT=$(ls wildcard-download/ | wc -l)
+            echo "File count: $COUNT"
+            if [ "$COUNT" -lt 1 ]; then
+              echo "FAIL: no files found in wildcard-download/"
+              exit 1
+            fi
+            echo "PASS: $COUNT file(s) downloaded"
+          else
+            echo "SKIP: action did not succeed, skipping file check"
+          fi

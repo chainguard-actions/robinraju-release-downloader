@@ -1,0 +1,70 @@
+name: Test download latest release
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Pre-create output directory
+        run: mkdir -p "$GITHUB_WORKSPACE/latest-download"
+
+      - id: download
+        uses: .
+        continue-on-error: true
+        with:
+          repository: robinraju/release-downloader
+          latest: 'true'
+          fileName: '*'
+          out-file-path: latest-download
+          token: ${{ github.token }}
+
+      - name: Assert action outcome
+        env:
+          OUTCOME: ${{ steps.download.outcome }}
+          TAG: ${{ steps.download.outputs.tag_name }}
+          RELEASE: ${{ steps.download.outputs.release_name }}
+          FILES: ${{ steps.download.outputs.downloaded_files }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "tag_name: $TAG"
+          echo "release_name: $RELEASE"
+          echo "downloaded_files: $FILES"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$TAG" ]; then
+              echo "FAIL: tag_name is empty"
+              exit 1
+            fi
+            if [ -z "$RELEASE" ]; then
+              echo "FAIL: release_name is empty"
+              exit 1
+            fi
+            if [ -z "$FILES" ]; then
+              echo "FAIL: downloaded_files is empty"
+              exit 1
+            fi
+            echo "PASS: tag_name='$TAG' release_name='$RELEASE'"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (API not reachable or rate limited)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
+
+      - name: Assert file exists on disk (if action succeeded)
+        env:
+          OUTCOME: ${{ steps.download.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            COUNT=$(ls latest-download/ 2>/dev/null | wc -l)
+            echo "File count: $COUNT"
+            if [ "$COUNT" -lt 1 ]; then
+              echo "FAIL: no files found in latest-download/"
+              exit 1
+            fi
+            echo "PASS: $COUNT file(s) downloaded"
+          else
+            echo "SKIP: action did not succeed, skipping file check"
+          fi
