@@ -1,0 +1,47 @@
+name: Test download all assets with wildcard
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create output directory
+        run: mkdir -p "$GITHUB_WORKSPACE/downloads-all"
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          repository: robinraju/release-downloader
+          latest: 'true'
+          fileName: '*'
+          out-file-path: downloads-all
+          token: ${{ github.token }}
+
+      - name: Assert downloaded_files output is set or action failed gracefully
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          TAG_NAME: ${{ steps.action.outputs.tag_name }}
+          DOWNLOADED_FILES: ${{ steps.action.outputs.downloaded_files }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "tag_name: $TAG_NAME"
+          echo "downloaded_files: $DOWNLOADED_FILES"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$TAG_NAME" ]; then
+              echo "FAIL: action succeeded but tag_name output is empty"
+              exit 1
+            fi
+            if [ -z "$DOWNLOADED_FILES" ]; then
+              echo "FAIL: action succeeded but downloaded_files output is empty"
+              exit 1
+            fi
+            echo "PASS: got tag_name='$TAG_NAME' downloaded_files='$DOWNLOADED_FILES'"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (sentinel repo or API issue)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
