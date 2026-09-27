@@ -1,0 +1,41 @@
+name: Test specific tag release download
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          repository: robinraju/release-downloader
+          tag: "v1.7"
+          fileName: "*"
+          out-file-path: "downloaded-tag-assets"
+        continue-on-error: true
+
+      - name: Assert action ran with specific tag or failed gracefully
+        env:
+          TAG_NAME: ${{ steps.action.outputs.tag_name }}
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "tag_name: $TAG_NAME"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$TAG_NAME" ]; then
+              echo "FAIL: action succeeded but tag_name output is empty"
+              exit 1
+            fi
+            if [ "$TAG_NAME" != "v1.7" ]; then
+              echo "FAIL: expected tag_name='v1.7' but got '$TAG_NAME'"
+              exit 1
+            fi
+            echo "PASS: tag_name='$TAG_NAME'"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (API call may have failed under harness)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

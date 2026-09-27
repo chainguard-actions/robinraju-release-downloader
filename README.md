@@ -1,15 +1,134 @@
-# robinraju/release-downloader
+## Github Release Downloader
 
-Download release assets from private or public github repositories
+![CI](https://github.com/robinraju/release-downloader/workflows/CI/badge.svg)
 
-Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/robinraju/release-downloader](https://github.com/robinraju/release-downloader).
+A Github Action to download assets from github release. It can download specified files from both private and public repositories.
 
-## Versions
+## Usage
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v1.12 | [`v1.12`](https://github.com/chainguard-actions/robinraju-release-downloader/tree/v1.12) | [`daf26c5`](https://github.com/robinraju/release-downloader/commit/daf26c55d821e836577a15f77d86ddc078948b05) |
-| v1.13 | [`v1.13`](https://github.com/chainguard-actions/robinraju-release-downloader/tree/v1.13) | [`28fc21f`](https://github.com/robinraju/release-downloader/commit/28fc21f50d76778e7023361aa1f863e717d3d56f) |
+```yaml
+
+- uses: robinraju/release-downloader@v1.6
+  with: 
+    # The source repository path.
+    # Expected format {owner}/{repo}
+    # Default: ${{ github.repository }}
+    repository: ""
+    
+    # A flag to set the download target as latest release
+    # The default value is 'false'
+    latest: true
+    
+    # The github tag. e.g: v1.0.1
+    # Download assets from a specific tag/version
+    tag: ""
+    
+    # The release id to download files from 
+    releaseId: ""
+    
+    # The name of the file to download.
+    # Use this field only to specify filenames other than tarball or zipball, if any.
+    # Supports wildcard pattern (eg: '*', '*.deb', '*.zip' etc..)
+    fileName: ""
+    
+    # Download the attached tarball (*.tar.gz)
+    tarBall: true
+    
+    # Download the attached zipball (*.zip)
+    zipBall: true
+    
+    # Relative path under $GITHUB_WORKSPACE to place the downloaded file(s)
+    # It will create the target directory automatically if not present
+    # eg: out-file-path: "my-downloads" => It will create directory $GITHUB_WORKSPACE/my-downloads
+    out-file-path: ""
+    
+    # Github access token to download files from private repositories
+    # https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets
+    # eg: token: ${{ secrets.MY_TOKEN }}
+    token: ""
+
+    # The URL of the Github API, only use this input if you are using Github Enterprise
+    # Default: "https://api.github.com"
+    # Use http(s)://[hostname]/api/v3 to access the API for GitHub Enterprise Server
+    github-api-url: ""
+```
+
+#### Outputs variables
+
+- `tag_name` it outputs the tag used to download a release.
+
+> This variable can be used by other actions as an input as follows
+> ```
+> ${{steps.<step-id>.outputs.tag_name}}
+> ```
+
+## Scenarios
+
+### Download asset from the latest release in the current repository
+
+```yaml
+
+- uses: robinraju/release-downloader@v1.6
+  with:
+    latest: true
+    fileName: "foo.zip"
+```
+
+### Download asset from a specific release version.
+
+```yaml
+
+- uses: robinraju/release-downloader@v1.6
+  with:
+    repository: "owner/repo"
+    tag: "v1.0.0"
+    fileName: "foo.zip"
+```
+
+### Download tarball and zipball
+
+```yaml
+
+- uses: robinraju/release-downloader@v1.6
+  with:
+    repository: "owner/repo"
+    latest: true
+    tarBall: true
+    zipBall: true
+```
+> Remove the `latest` flag and specify `tag` if you want to download from a different release.
+
+### Download multiple assets
+
+```yaml
+- uses: robinraju/release-downloader@v1.6
+  with:
+    repository: "owner/repo"
+    latest: true
+    fileName: "foo.zip"
+    tarBall: true
+    zipBall: true
+```
+
+### Download all assets if more than one files are available
+
+```yaml
+- uses: robinraju/release-downloader@v1.6
+  with:
+    repository: "owner/repo"
+    latest: true
+    fileName: "*"
+```
+
+### Download assets using wildcard pattern
+
+```yaml
+- uses: robinraju/release-downloader@v1.6
+  with:
+    repository: "owner/repo"
+    latest: true
+    fileName: "*.deb"
+```
 
 ## Privacy
 
