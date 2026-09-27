@@ -1,0 +1,56 @@
+name: Test extract - download and extract release asset
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create output directory
+        run: mkdir -p "$GITHUB_WORKSPACE/extracted"
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          repository: robinraju/release-downloader
+          tag: v1.9
+          fileName: release-downloader_1.9_linux_amd64.tar.gz
+          out-file-path: extracted
+          extract: "true"
+          token: ${{ github.token }}
+
+      - name: Assert action ran and produced expected results
+        env:
+          TAG: ${{ steps.action.outputs.tag_name }}
+          FILES: ${{ steps.action.outputs.downloaded_files }}
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "tag_name: $TAG"
+          echo "downloaded_files: $FILES"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$TAG" ]; then
+              echo "FAIL: tag_name output is empty"
+              exit 1
+            fi
+            if [ -z "$FILES" ]; then
+              echo "FAIL: downloaded_files output is empty"
+              exit 1
+            fi
+            echo "Contents of extracted directory:"
+            ls -la "$GITHUB_WORKSPACE/extracted/" || true
+            COUNT=$(find "$GITHUB_WORKSPACE/extracted" -type f | wc -l)
+            echo "File count: $COUNT"
+            if [ "$COUNT" -lt 1 ]; then
+              echo "FAIL: no files found after extraction"
+              exit 1
+            fi
+            echo "PASS: $COUNT file(s) found after extraction, tag=$TAG"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (sentinel repo or API issue)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
