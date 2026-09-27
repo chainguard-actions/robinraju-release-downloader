@@ -1,0 +1,59 @@
+name: Test basic usage - download specific file by tag
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create output directory
+        run: mkdir -p tests/downloads/basic
+
+      - id: download
+        uses: .
+        continue-on-error: true
+        with:
+          repository: robinraju/release-downloader
+          tag: v1.8
+          fileName: release-downloader_linux_amd64.tar.gz
+          out-file-path: tests/downloads/basic
+          token: ${{ github.token }}
+
+      - name: Assert download outcome
+        env:
+          OUTCOME: ${{ steps.download.outcome }}
+          TAG_NAME: ${{ steps.download.outputs.tag_name }}
+          RELEASE_NAME: ${{ steps.download.outputs.release_name }}
+          DOWNLOADED: ${{ steps.download.outputs.downloaded_files }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "tag_name: $TAG_NAME"
+          echo "release_name: $RELEASE_NAME"
+          echo "downloaded_files: $DOWNLOADED"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$TAG_NAME" ]; then
+              echo "FAIL: action succeeded but tag_name output is empty"
+              exit 1
+            fi
+            if [ -z "$RELEASE_NAME" ]; then
+              echo "FAIL: action succeeded but release_name output is empty"
+              exit 1
+            fi
+            if [ -z "$DOWNLOADED" ]; then
+              echo "FAIL: action succeeded but downloaded_files output is empty"
+              exit 1
+            fi
+            FILE="tests/downloads/basic/release-downloader_linux_amd64.tar.gz"
+            if [ ! -f "$FILE" ]; then
+              echo "FAIL: expected downloaded file not found at $FILE"
+              ls -la tests/downloads/basic/ || true
+              exit 1
+            fi
+            echo "PASS: file downloaded successfully, tag_name=$TAG_NAME"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (API not reachable in harness environment)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

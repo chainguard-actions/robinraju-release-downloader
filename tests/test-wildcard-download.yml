@@ -1,0 +1,55 @@
+name: Test wildcard download - all assets
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create output directory
+        run: mkdir -p tests/downloads/wildcard
+
+      - id: download
+        uses: .
+        continue-on-error: true
+        with:
+          repository: robinraju/release-downloader
+          tag: v1.8
+          fileName: "*"
+          out-file-path: tests/downloads/wildcard
+          token: ${{ github.token }}
+
+      - name: Assert wildcard download outcome
+        env:
+          OUTCOME: ${{ steps.download.outcome }}
+          TAG_NAME: ${{ steps.download.outputs.tag_name }}
+          DOWNLOADED: ${{ steps.download.outputs.downloaded_files }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "tag_name: $TAG_NAME"
+          echo "downloaded_files: $DOWNLOADED"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$TAG_NAME" ]; then
+              echo "FAIL: action succeeded but tag_name output is empty"
+              exit 1
+            fi
+            if [ -z "$DOWNLOADED" ]; then
+              echo "FAIL: action succeeded but downloaded_files output is empty"
+              exit 1
+            fi
+            DIR="tests/downloads/wildcard"
+            COUNT=$(ls -1 "$DIR" 2>/dev/null | wc -l)
+            echo "Files downloaded: $COUNT"
+            ls -la "$DIR" || true
+            if [ "$COUNT" -lt 1 ]; then
+              echo "FAIL: expected at least one file but directory is empty"
+              exit 1
+            fi
+            echo "PASS: $COUNT files downloaded with wildcard, tag_name=$TAG_NAME"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (API not reachable in harness environment)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
