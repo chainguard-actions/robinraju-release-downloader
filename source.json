@@ -4,8 +4,13 @@
   "version": "v1.11",
   "commit_sha": "a96f54c1b5f5e09e47d9504526e96febd949d4c2",
   "url": "https://github.com/robinraju/release-downloader",
-  "policy_sha": "d636be7e43ef829af6e853da6b3c7566db9f72fe",
+  "policy_sha": "374911c4be584df24e6da57af2d990570ef0f859",
   "test_policy_sha": "843adf9e4b8f85d0c08b27b9d0b09dd094b54702",
   "test_agent_version": "2",
-  "harden_agent_version": "2"
+  "harden_agent_version": "2",
+  "dist_artifact": {
+    "gcs_uri": "gs://patch-actions-node-artifacts/dist-artifacts/robinraju/release-downloader/v1.11/sha256-3daf7b2fcc1f06ff4c035cd385958bb18eb844d701c3c7641e4c5561f0069039.tar.gz",
+    "sha256": "3daf7b2fcc1f06ff4c035cd385958bb18eb844d701c3c7641e4c5561f0069039",
+    "size_bytes": 405769
+  }
 }
